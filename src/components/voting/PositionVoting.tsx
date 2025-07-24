@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Check } from 'lucide-react';
+import { ArrowLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { type ElectionPosition, type Candidate, POSITION_LABELS } from '@/types/voting';
 import { useToast } from '@/hooks/use-toast';
@@ -27,6 +29,7 @@ export const PositionVoting = ({
 }: PositionVotingProps) => {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [loading, setLoading] = useState(true);
+  const [localSelection, setLocalSelection] = useState<string>(selectedCandidateId || '');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -55,7 +58,17 @@ export const PositionVoting = ({
     fetchCandidates();
   }, [position, toast]);
 
+  useEffect(() => {
+    setLocalSelection(selectedCandidateId || '');
+  }, [selectedCandidateId]);
+
   const progress = (currentPosition / totalPositions) * 100;
+
+  const handleNext = () => {
+    if (localSelection) {
+      onVoteSelect(localSelection);
+    }
+  };
 
   if (loading) {
     return (
@@ -104,53 +117,63 @@ export const PositionVoting = ({
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4">
-          <p className="text-lg text-muted-foreground mb-4">
+        <div className="space-y-6">
+          <p className="text-lg text-muted-foreground">
             Select one candidate for {POSITION_LABELS[position]}:
           </p>
           
-          {candidates.map((candidate) => (
-            <Card 
-              key={candidate.id}
-              className={`cursor-pointer transition-all hover:shadow-md ${
-                selectedCandidateId === candidate.id 
-                  ? 'ring-2 ring-primary bg-primary/5' 
-                  : 'hover:bg-muted/50'
-              }`}
-              onClick={() => onVoteSelect(candidate.id)}
-            >
-              <CardHeader className="pb-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-xl">{candidate.name}</CardTitle>
-                    <CardDescription className="text-base">
-                      Candidate for {POSITION_LABELS[position]}
-                    </CardDescription>
-                  </div>
-                  {selectedCandidateId === candidate.id && (
-                    <div className="flex items-center space-x-2">
-                      <Check className="w-6 h-6 text-primary" />
-                      <Badge variant="default">Selected</Badge>
+          <RadioGroup 
+            value={localSelection} 
+            onValueChange={setLocalSelection}
+            className="space-y-4"
+          >
+            {candidates.map((candidate) => (
+              <div key={candidate.id}>
+                <Card className="transition-all hover:shadow-md">
+                  <CardContent className="p-6">
+                    <div className="flex items-center space-x-4">
+                      <RadioGroupItem 
+                        value={candidate.id} 
+                        id={candidate.id}
+                        className="mt-1"
+                      />
+                      <Label 
+                        htmlFor={candidate.id} 
+                        className="flex-1 cursor-pointer"
+                      >
+                        <div>
+                          <h3 className="text-xl font-semibold">{candidate.name}</h3>
+                          <p className="text-muted-foreground">
+                            Candidate for {POSITION_LABELS[position]}
+                          </p>
+                        </div>
+                      </Label>
                     </div>
-                  )}
-                </div>
-              </CardHeader>
-            </Card>
-          ))}
+                  </CardContent>
+                </Card>
+              </div>
+            ))}
+          </RadioGroup>
         </div>
       )}
 
-      {selectedCandidateId && (
-        <div className="mt-8 text-center">
-          <Button 
-            size="lg" 
-            onClick={() => onVoteSelect(selectedCandidateId)}
-            className="px-8"
-          >
-            {currentPosition < totalPositions ? 'Next Position' : 'Review Votes'}
-          </Button>
-        </div>
-      )}
+      <div className="mt-8 text-center">
+        <Button 
+          size="lg" 
+          onClick={handleNext}
+          disabled={!localSelection}
+          className="px-8"
+        >
+          <ChevronRight className="w-4 h-4 mr-2" />
+          {currentPosition < totalPositions ? 'Next Position' : 'Review Votes'}
+        </Button>
+        
+        {!localSelection && (
+          <p className="text-sm text-muted-foreground mt-2">
+            Please select a candidate to continue
+          </p>
+        )}
+      </div>
     </div>
   );
 };

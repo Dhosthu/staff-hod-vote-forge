@@ -14,7 +14,90 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      candidates: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          position: Database["public"]["Enums"]["election_position"]
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          position: Database["public"]["Enums"]["election_position"]
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          position?: Database["public"]["Enums"]["election_position"]
+        }
+        Relationships: []
+      }
+      voters: {
+        Row: {
+          created_at: string
+          id: string
+          name: string | null
+          role: Database["public"]["Enums"]["voter_role"]
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name?: string | null
+          role: Database["public"]["Enums"]["voter_role"]
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string | null
+          role?: Database["public"]["Enums"]["voter_role"]
+        }
+        Relationships: []
+      }
+      votes: {
+        Row: {
+          candidate_id: string
+          created_at: string
+          id: string
+          points: number
+          position: Database["public"]["Enums"]["election_position"]
+          voter_id: string
+        }
+        Insert: {
+          candidate_id: string
+          created_at?: string
+          id?: string
+          points: number
+          position: Database["public"]["Enums"]["election_position"]
+          voter_id: string
+        }
+        Update: {
+          candidate_id?: string
+          created_at?: string
+          id?: string
+          points?: number
+          position?: Database["public"]["Enums"]["election_position"]
+          voter_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "votes_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "votes_voter_id_fkey"
+            columns: ["voter_id"]
+            isOneToOne: false
+            referencedRelation: "voters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +106,13 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      election_position:
+        | "vice_president"
+        | "secretary"
+        | "joint_secretary"
+        | "associate_secretary"
+        | "joint_treasurer"
+      voter_role: "staff" | "hod"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +239,15 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      election_position: [
+        "vice_president",
+        "secretary",
+        "joint_secretary",
+        "associate_secretary",
+        "joint_treasurer",
+      ],
+      voter_role: ["staff", "hod"],
+    },
   },
 } as const
